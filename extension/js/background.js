@@ -1,25 +1,39 @@
-var config;
-
+// should change to extension install event
 window.onload = init;
 function init() {
 //	if (typeof localStorage["capturing"] === "undefined") {
-	console.log("window.onload");
 		localStorage["capturing"] = "off";
 //	}
 }
 
+// append iframe, then send it a message to get config details
+// once the config message is received, capture starts
 function appendIframe(){
 	var iframe = document.createElement("iframe");
 	iframe.src="http://localhost:8086";
 	document.body.appendChild(iframe);
 	iframe.onload = function(){
-		iframe.contentWindow.postMessage("Hi from background.js", "*");
+		iframe.contentWindow.postMessage("sendConfig", "*");
 	};
 }
 
+function handleCapture(localMediaStream){
+	console.log(localMediaStream);
+}
+
+function startCapture(){
+	chrome.tabs.getSelected(null, function(tab) {
+		var selectedTabId = tab.id;
+		chrome.tabCapture.capture({audio:true, video:true}, handleCapture);
+	});
+}
+
+var config;
+// when config is received, start capture
 window.addEventListener("message", function(event) {
 	config = JSON.parse(event.data);
   console.log("Got message in background.js: ", config);
+  startCapture();
 });
 
 
@@ -30,29 +44,17 @@ var iconCapture = "tabCapture22.png";
 var iconPause = "pause22.png";
 
 
-function handleCapture(localMediaStream){
-	console.log(localMediaStream);
-}
-
-// when the record button is clicked:
-// - toggle the button icon and title
+// when the record/pause button is clicked toggle the button icon and title
 chrome.browserAction.onClicked.addListener(function(tab) {
 	var currentMode = localStorage["capturing"];
 	var newMode = currentMode === "on" ? "off" : "on";
 	if (newMode === "on"){
-		chrome.tabs.getSelected(null, function(tab) {
-			console.log("capture! newMode :", newMode);
-//			var selectedTabId = tab.id;
-			// start capture
-			appendIframe();
-//			chrome.tabCapture.capture(selectedTabId, {audio:true, video:true}, handleCapture);
-		});
-	} else {
+			appendIframe(); // capture starts once iframe created
+	} else { // turn off capture
 		chrome.tabs.getSelected(null, function(tab){
-			console.log("stop! newMode :", newMode);
-//			var selectedTabId = tab.id;
-			// stop capture
-//			chrome.tabCapture.capture(selectedTabId, {audio:false, video:false});
+			console.log("stop capture! newMode :", newMode);
+			var selectedTabId = tab.id;
+			chrome.tabCapture.capture(selectedTabId, {audio:false, video:false});
 		});
 	}
 	localStorage["capturing"] = newMode;
@@ -87,4 +89,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 // 	function handleUpdate(tabId, selectInfo) {
 // 	}
 // );
+
+
+///////////////////////////////////////////////
 
