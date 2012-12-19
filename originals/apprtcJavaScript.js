@@ -1,6 +1,6 @@
-  var localVideo;
-  var miniVideo;
-  var remoteVideo;
+  // var localVideo;
+  // var miniVideo;
+  // var remoteVideo;
   var localStream;
   var remoteStream;
   var channel;
@@ -8,7 +8,7 @@
   var channelRefreshTimer;
   var pc;
   var socket;
-  var initiator = initiator;
+//  var initiator = initiator;
   var started = false;
   // Set up audio and video regardless of what devices are present.
   var mediaConstraints = {'mandatory': {
@@ -18,15 +18,18 @@
   var isAudioMuted = false;
 
   function initialize() {
-    console.log("Initializing; room=room_key.");
-    card = document.getElementById("card");
-    localVideo = document.getElementById("localVideo");
-    miniVideo = document.getElementById("miniVideo");
-    remoteVideo = document.getElementById("remoteVideo");
+    console.log("Initializing; room = " + room_key + ".");
+    // card = document.getElementById("card");
+    // localVideo = document.getElementById("localVideo");
+    // miniVideo = document.getElementById("miniVideo");
+    // remoteVideo = document.getElementById("remoteVideo");
     resetStatus();
-    openChannel('token');
+    openChannel(token);
     startTokenRefresh();
-    doGetUserMedia();
+    // doGetUserMedia();
+    // we have the stream from chrome.tabCapture at this point, so:
+    // Caller creates PeerConnection.
+    if (initiator) maybeStart();
   }
 
   function openChannel(channelToken) {
@@ -43,7 +46,7 @@
 
   function resetStatus() {
     if (!initiator) {
-      setStatus("Waiting for someone to join: <a href=\"room_link\">room_link</a>");
+      setStatus("Waiting for someone to join: <a href=\"" + room_link + "\">room_link</a>");
     } else {
       setStatus("Initializing...");
     }
@@ -51,10 +54,10 @@
 
   function doGetUserMedia() {
     // Call into getUserMedia via the polyfill (adapter.js).
-    var constraints = media_constraints|safe;
+    var constraints = media_constraints;
     try {
-      getUserMedia({'audio':true, 'video':constraints}, onUserMediaSuccess,
-                   onUserMediaError);
+      // getUserMedia({'audio':true, 'video':constraints}, onUserMediaSuccess,
+      //              onUserMediaError);
       console.log("Requested access to local media with mediaConstraints:\n" +
                   "  \"" + JSON.stringify(constraints) + "\"");
     } catch (e) {
@@ -64,7 +67,7 @@
   }
 
   function createPeerConnection() {
-    var pc_config = pc_config|safe;
+    // var pc_config = pc_config;
     try {
       // Create an RTCPeerConnection via the polyfill (adapter.js).
       pc = new RTCPeerConnection(pc_config);
@@ -98,7 +101,8 @@
   }
 
   function setStatus(state) {
-    footer.innerHTML = state;
+    console.log(state);
+    // footer.innerHTML = state;
   }
 
   function doCall() {
@@ -121,7 +125,7 @@
   function sendMessage(message) {
     var msgString = JSON.stringify(message);
     console.log('C->S: ' + msgString);
-    path = '/message?r=room_key' + '&u=me';
+    path = "/message?r=" + room_key + "&u=" + me;
     var xhr = new XMLHttpRequest();
     xhr.open('POST', path, true);
     xhr.send(msgString);
@@ -169,9 +173,9 @@
   function onUserMediaSuccess(stream) {
     console.log("User has granted access to local media.");
     // Call the polyfill wrapper to attach the media stream to this element.
-    attachMediaStream(localVideo, stream);
-    localVideo.style.opacity = 1;
-    localStream = stream;
+    // attachMediaStream(localVideo, stream);
+    // localVideo.style.opacity = 1;
+    // localStream = stream;
     // Caller creates PeerConnection.
     if (initiator) maybeStart();
   }
@@ -202,8 +206,8 @@
   function onRemoteStreamAdded(event) {
     console.log("Remote stream added.");
     // TODO(ekr@rtfm.com): Copy the minivideo on Firefox
-    miniVideo.src = localVideo.src;
-    attachMediaStream(remoteVideo, event.stream);
+    // miniVideo.src = localVideo.src;
+//    attachMediaStream(remoteVideo, event.stream);
     remoteStream = event.stream;
     waitForRemoteVideo();
   }
@@ -243,27 +247,28 @@
     }
   }
   function transitionToActive() {
-    remoteVideo.style.opacity = 1;
-    card.style.webkitTransform = "rotateY(180deg)";
-    setTimeout(function() { localVideo.src = ""; }, 500);
-    setTimeout(function() { miniVideo.style.opacity = 1; }, 1000);
+    // remoteVideo.style.opacity = 1;
+    // card.style.webkitTransform = "rotateY(180deg)";
+    // setTimeout(function() { localVideo.src = ""; }, 500);
+    // setTimeout(function() { miniVideo.style.opacity = 1; }, 1000);
     setStatus("<input type=\"button\" id=\"hangup\" value=\"Hang up\" onclick=\"onHangup()\" />");
   }
   function transitionToWaiting() {
-    card.style.webkitTransform = "rotateY(0deg)";
+    // card.style.webkitTransform = "rotateY(0deg)";
     setTimeout(function() {
-                 localVideo.src = miniVideo.src;
-                 miniVideo.src = "";
-                 remoteVideo.src = "" }, 500);
-    miniVideo.style.opacity = 0;
-    remoteVideo.style.opacity = 0;
+                 // localVideo.src = miniVideo.src;
+                 // miniVideo.src = "";
+                 // remoteVideo.src = "";
+               }, 500);
+    // miniVideo.style.opacity = 0;
+    // remoteVideo.style.opacity = 0;
     resetStatus();
   }
   function transitionToDone() {
-    localVideo.style.opacity = 0;
-    remoteVideo.style.opacity = 0;
-    miniVideo.style.opacity = 0;
-    setStatus("You have left the call. <a href=\"room_link\">Click here</a> to rejoin.");
+    // localVideo.style.opacity = 0;
+    // remoteVideo.style.opacity = 0;
+    // miniVideo.style.opacity = 0;
+    setStatus("You have left the call. <a href=\"" + room_link + "\">Click here</a> to rejoin.");
   }
   function enterFullScreen() {
     container.webkitRequestFullScreen();
