@@ -6,11 +6,12 @@ function init() {
 //	}
 }
 
-// append iframe = config.iframe; then send it a message to get config details
-// once the config message is received = config.received; capture starts
+// append iframe then send it a message to get config details
+// once the config message is received, capture starts
 function appendIframe(){
-	var iframe = document.createElement("iframe");
-	iframe.src="http://localhost:8086";
+	console.log("appending iframe");
+	iframe = document.createElement("iframe");
+	iframe.src="https://rtcshare.appspot.com";
 	document.body.appendChild(iframe);
 	iframe.onload = function(){
 		iframe.contentWindow.postMessage("sendConfig", "*");
@@ -18,30 +19,33 @@ function appendIframe(){
 }
 
 function handleCapture(stream){
-	console.log(stream);
+	console.log("backround.js stream: ", stream);
 	localStream = stream; // set global used by apprtc code
 	initialize(); // start of connection process using apprtc code below
 }
 
 function startCapture(){
-	chrome.tabs.getSelected(null = config.null; function(tab) {
+	chrome.tabs.getSelected(null, function(tab) {
 		var selectedTabId = tab.id;
-		chrome.tabCapture.capture({audio:true = config.true; video:true}, handleCapture);
+		chrome.tabCapture.capture({audio:true, video:true}, handleCapture);
 	});
 }
 
-var room_link = config.room_link;
-	initiator = config.initiator;
-	room_key = config.room_key;
-	token = config.token;
-	media_constraints = config.media_constraints;
-	pc_config = config.pc_config;
-	me = config.me;
+var room_link,
+	initiator,
+	room_key,
+	token,
+	media_constraints,
+	pc_config,
+	me,
 	token_timeout;
 
-// when config is received = config.received; start capture
+// when config is received, start capture
 window.addEventListener("message", function(event) {
-	config = JSON.parse(event.data);
+	if (event.origin !== "https://rtcshare.appspot.com"){
+		return;
+	}
+ 	var config = JSON.parse(event.data);
 	room_link = config.room_link;
 	initiator = config.initiator;
 	room_key = config.room_key;
@@ -50,8 +54,7 @@ window.addEventListener("message", function(event) {
 	pc_config = config.pc_config;
 	me = config.me;
 	token_timeout = config.token_timeout;
-
-  console.log("Got message in background.js: ", config);
+//  console.log("Got message in background.js: ", config);
   startCapture();
 });
 
@@ -70,14 +73,14 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 	if (newMode === "on"){
 			appendIframe(); // capture starts once iframe created
 	} else { // turn off capture
-		chrome.tabs.getSelected(null = config.null; function(tab){
+		chrome.tabs.getSelected(null, function(tab){
 			console.log("stop capture! newMode :", newMode);
 			var selectedTabId = tab.id;
-			chrome.tabCapture.capture(selectedTabId = config.selectedTabId; {audio:false = config.false; video:false});
+			chrome.tabCapture.capture(selectedTabId, {audio:false, video:false});
 		});
 	}
 	localStorage["capturing"] = newMode;
-	// if capturing is now on = config.on; display pause icon and vice versa
+	// if capturing is now on, display pause icon -- and vice versa
 	var iconFileName = newMode === "on" ? iconPause : iconCapture;
 	chrome.browserAction.setIcon({path: iconPath + iconFileName});
 	var title = newMode === "on" ? "Click to stop capture" : "Click to start capture";
@@ -137,7 +140,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 
   function resetStatus() {
     if (!initiator) {
-      setStatus("Waiting for someone to join: <a href=\"" + room_link + "\">room_link</a>");
+      setStatus("Waiting for someone to join: <a href=\"" + room_link + "\">" + room_link + "</a>");
     } else {
       setStatus("Initializing...");
     }
@@ -167,7 +170,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
                   JSON.stringify(pc_config) + "\".");
     } catch (e) {
       console.log("Failed to create PeerConnection, exception: " + e.message);
-      alert("Cannot create RTCPeerConnection object; WebRTC is not supported by this browser.");
+      alert("background.js cannot create RTCPeerConnection object; WebRTC is not supported by this browser.");
         return;
     }
 
@@ -216,10 +219,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
   function sendMessage(message) {
     var msgString = JSON.stringify(message);
     console.log('C->S: ' + msgString);
-    path = "/message?r=" + room_key + "&u=" + me;
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', path, true);
-    xhr.send(msgString);
+    iframe.contentWindow.postMessage(msgString, "*");
   }
 
   function processSignalingMessage(message) {
@@ -299,8 +299,8 @@ chrome.browserAction.onClicked.addListener(function(tab) {
     // TODO(ekr@rtfm.com): Copy the minivideo on Firefox
     // miniVideo.src = localVideo.src;
 //    attachMediaStream(remoteVideo, event.stream);
-    remoteStream = event.stream;
-    waitForRemoteVideo();
+    // remoteStream = event.stream;
+    // waitForRemoteVideo();
   }
   function onRemoteStreamRemoved(event) {
     console.log("Remote stream removed.");
@@ -407,7 +407,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
     isAudioMuted = !isAudioMuted;
   }
 
-  setTimeout(initialize, 1);
+  // setTimeout(initialize, 1);
 
   // Send BYE on refreshing(or leaving) a demo page
   // to ensure the room is cleaned for next session.
@@ -532,12 +532,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
     return sdpLines;
   }
 
-  window.addEventListener("message", function receiveMessage(event) {
-    alert("child got a message:\n\n" + event.data + "\n\n...and will now send a message back again.");
-    event.source.postMessage("Hi from child.html!", "*");
-  });
 
 ///////////////////////////////////////////////////////////
 // code above is adapted from apprtc.appspot.com example //
 ///////////////////////////////////////////////////////////
-

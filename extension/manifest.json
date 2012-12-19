@@ -4,24 +4,24 @@
 	"manifest_version" : 2,
 	"description" : "Use chrome.tabCapture for screensharing and to record screencasts.",
 	"background": {
-    "scripts": ["js/background.js"]/*,
+    "scripts": ["js/adapter.js", "js/channel.js", "js/background.js"]/*,
     "persistent": false*/
   },
 	"browser_action" : {
 		"default_icon" : "images/tabCapture22.png",
 		"default_title" : "Click to start capture"
 	},
-	"content_scripts" : [
-		{
-			"matches" : [
-				"http://*/*",
-				"https://*/*"
-			],
-		"js" : ["js/contentscript.js"],
-		"run_at" : "document_end",
-		"all_frames" : true
-		}
-	],
+	// "content_scripts" : [
+	// 	{
+	// 		"matches" : [
+	// 			"http://*/*",
+	// 			"https://*/*"
+	// 		],
+	// 	"js" : ["js/contentscript.js"],
+	// 	"run_at" : "document_end",
+	// 	"all_frames" : true
+	// 	}
+	// ],
 	"icons" : {
 		"16" : "images/tabCapture16.png",
 		"22" : "images/tabCapture22.png",
