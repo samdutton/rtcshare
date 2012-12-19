@@ -20,7 +20,7 @@ function appendIframe(){
 
 function handleCapture(stream){
 	console.log("backround.js stream: ", stream);
-	localStream = stream; // set global used by apprtc code
+	localStream = stream; // set global used by apprtc code and when stopping stream
 	initialize(); // start of connection process using apprtc code below
 }
 
@@ -70,13 +70,17 @@ var iconPause = "pause22.png";
 chrome.browserAction.onClicked.addListener(function(tab) {
 	var currentMode = localStorage["capturing"];
 	var newMode = currentMode === "on" ? "off" : "on";
+	// start capture
 	if (newMode === "on"){
 			appendIframe(); // capture starts once iframe created
-	} else { // turn off capture
+	// stop capture
+	} else {
 		chrome.tabs.getSelected(null, function(tab){
 			console.log("stop capture! newMode :", newMode);
 			var selectedTabId = tab.id;
-			chrome.tabCapture.capture(selectedTabId, {audio:false, video:false});
+			localStream.stop();
+			onRemoteHangup();
+//			chrome.tabCapture.capture(selectedTabId, {audio:false, video:false});
 		});
 	}
 	localStorage["capturing"] = newMode;
@@ -248,6 +252,8 @@ chrome.browserAction.onClicked.addListener(function(tab) {
   function onChannelOpened() {
     console.log('Channel opened.');
     channelReady = true;
+    // just for demo: open page showing screen capture in new tab
+    chrome.tabs.create({url: room_link});
     if (initiator) maybeStart();
   }
   function onChannelMessage(message) {
@@ -317,6 +323,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 
   function onRemoteHangup() {
     console.log('Session terminated.');
+		localStream.stop();
     transitionToWaiting();
     stop();
     initiator = 0;
@@ -353,6 +360,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
                }, 500);
     // miniVideo.style.opacity = 0;
     // remoteVideo.style.opacity = 0;
+    // open link in new tab
     resetStatus();
   }
   function transitionToDone() {

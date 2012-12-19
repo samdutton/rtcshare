@@ -2,7 +2,7 @@
 	"name" : "chrome.tabCapture demo",
 	"version" : "1.0",
 	"manifest_version" : 2,
-	"description" : "Use chrome.tabCapture for screensharing and to record screencasts.",
+	"description" : "Use chrome.tabCapture for screensharing.",
 	"background": {
     "scripts": ["js/adapter.js", "js/channel.js", "js/background.js"]/*,
     "persistent": false*/
